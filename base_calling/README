@@ -1,0 +1,28 @@
+
+
+
+The sample details:
+
+Sample_run ID	Sample type	Study site	Estimated bases	Reads generated
+MRC0123_AmM001WB	Macaque blood	Donggala	21.76 Gb	3.83 M
+MRC0223_AmM002WB	Macaque blood	Donggala	12.08 Gb	2.58 M
+MRC0323_BiM003WB	Macaque blood	Gorontalo	14.98 Gb	2.32 M
+MRC0423_BiM001WB	Macaque blood	Gorontalo	17.82 Gb	6.48 M
+MRC0523_AmM006WB	Macaque blood	Donggala	21.2 Gb	4.96 M
+MRC0623_BiM002WB	Macaque blood	Gorontalo	17.45 Gb	2.92 M
+MRC0723_AmM007WB	Macaque blood	Donggala	19.85 Gb	4.02 M
+MRC0823_BiM004WB	Macaque blood	Gorontalo	15.91 Gb	3.28 M
+MRC0923_BiM005WB	Macaque blood	Gorontalo	13.1 Gb	6.43 M
+MRC1023_AmM008WB	Macaque blood	Donggala	19.27 Gb	4.19 M
+MRC1123_WuH001WB*	Human blood	Wulai	15.14 Gb	2.84 M
+Trial mk1c AmM002FS**	Macaque faeces	Donggala	5 Gb	2.65 M
+
+
+*The human blood sample from a fever symptomatic patient in Wulai study site
+**We use new device for the first time, called Mk1c. So we run a trial with one of macaque faecal sample on a re-used and washed flow-cell.
+
+
+All those data are uploaded and put in Gruffalo: /mnt/shared/projects/uosa/Janet_Cox_Singh/Sulawesi_Macaque
+
+The copy of those data are also backed-up in external hard drive /Sulawesi Macaque_MRC NEWTON/Sequence Data_Blood samples
+
