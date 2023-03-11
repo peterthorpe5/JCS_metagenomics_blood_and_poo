@@ -1,0 +1,88 @@
+ genomes selected in yellow in the email chain:The best N50 to represent each species was selceted. 
+
+The genomes were downloded using download_ncbi.py - with tax_id 5820 for plasmodium
+
+5807 = Cryptosporidium parvum
+
+Also, as outgpuprs these are also chosen.
+
+Cat all of them together and map to each other. Only pick uniquly mapped reads
+
+Re. outgroups: Others have used Cryptosporidium parvum, Toxoplasma gondii and Tetrahymena thermophilia when estimating TMRA for Plasmodium spp.  
+ 
+Not sure if this  helps – it is possible that the macaques could have Cryptosporidium and Toxoplasma spp –  Tetrahymena is more distant and might be a better bet?
+ 
+GCA_019844115.2_ASM1984411v2_genomic.fna was used for Cryptosporidium
+
+
+
+
+for Toxoplasma gondii -  GCA_000150015.2_TGVEG_genomic.fna was used 
+python download_ncbi.py -t 5811 -o toxo --email pjt6@st-andrews.ac.uk
+
+for Tetrahymena : (python36) Mac:/mnt/shared/scratch/doresegu/private/JCS_MetaGenome_Project/Outputs > 
+
+
+Chosen genome was: GCA_016584475.1_JCVI_TeTherMIC_3_genomic.fna   based on best N50
+
+for babasia
+ 
+
+ GCF_003330865.1_ASM333086v1_genomic.fna
+
+  python download_ncbi.py -t 77566 --email pjt6@st-andrews.ac.uk --format fasta -f -o hepatocystis
+  GCA_902459845.2_HEP1_genomic.fna 
+
+for PLAS:  
+
+
+Filenames	N50
+GCF_000956335.1_Plas_frag_nilgiri_V1_genomic.fna	306380
+GCF_900005765.1_PRELSG_genomic.fna	1287098	P. relictum SGS1
+GCF_900097015.1_PADLG01_genomic.fna	1315841	P. sp. gorilla clade G2
+P.berghei_GCA_900044335.1_PbK173.fna	1633590
+P.berghei_GCA_900095585.1_PbSP11RLL.fna	1585835
+P.brasilianum_GCA_023973825.1_ASM2397382v1.fna	2339971
+P.chabaudi_GCA_900095555.1_PchAJ.fna	1582197
+P.coatneyi_GCA_000725905.1_ASM72590v1.fna	2014888
+P.cynomolgi_GCA_900180395.1_PcyM.fna	1715570
+P.falciparum_GCA_900632095.1_PfSD01-3.fna	1823838
+P.gaboni_GCA_900097045.1_PGABG01.fna	1384258
+P.knowlesi_GCA_023845515.1_StPkA1H1.fna	2132014
+P.knowlesi_GCA_023845535.1_PKCLINC048.fna	2207148
+P.knowlesi_GCA_023845545.1_PKCLINC047.fna	2085900
+P.malariae_GCA_900090005.1_PmlGA01.fna	2065912
+P.ovale_GCA_900090035.2_PocGH01.fna	1039375
+P.reichenowi_GCA_900097025.1_PRG01.fna	1578783
+P.sp.DRC-Itaito_GCA_900257145.1_P.billcollinsi.fna	1627923
+P.sp.gorilla_clade_G1_GCA_900095595.1_PPRFG01.fna	1531866
+P.sp.gorilla_clade_G3_GCA_900097035.1_PBLACG01.fna	1355523
+P.vinckei_GCA_903994265.1_PVSEL_v1.fna	1799994
+P.vivax_GCA_914969965.1_5987STDY8548200.fna	2117118
+P.yoelii_GCA_020844765.1_ASM2084476v1.fna	2027
+
+
+cat GCF_000956335.1_Plas_frag_nilgiri_V1_genomic.fna GCF_900005765.1_PRELSG_genomic.fna GCF_900097015.1_PADLG01_genomic.fna P.berghei_GCA_900044335.1_PbK173.fna P.berghei_GCA_900095585.1_PbSP11RLL.fna P.brasilianum_GCA_023973825.1_ASM2397382v1.fna P.chabaudi_GCA_900095555.1_PchAJ.fna P.coatneyi_GCA_000725905.1_ASM72590v1.fna P.cynomolgi_GCA_900180395.1_PcyM.fna P.falciparum_GCA_900632095.1_PfSD01-3.fna P.gaboni_GCA_900097045.1_PGABG01.fna P.knowlesi_GCA_023845515.1_StPkA1H1.fna P.knowlesi_GCA_023845535.1_PKCLINC048.fna P.knowlesi_GCA_023845545.1_PKCLINC047.fna P.malariae_GCA_900090005.1_PmlGA01.fna P.ovale_GCA_900090035.2_PocGH01.fna P.reichenowi_GCA_900097025.1_PRG01.fna P.sp.DRC-Itaito_GCA_900257145.1_P.billcollinsi.fna P.sp.gorilla_clade_G1_GCA_900095595.1_PPRFG01.fna P.sp.gorilla_clade_G3_GCA_900097035.1_PBLACG01.fna P.vinckei_GCA_903994265.1_PVSEL_v1.fna P.vivax_GCA_914969965.1_5987STDY8548200.fna P.yoelii_GCA_020844765.1_ASM2084476v1.fna > ../genomes_to_use/plasmudium_of_interest.fasta
+
+
+genomes were hard masked by replacing lower case lotters with N
+python mask_fasta.py -i plas_outgrps_genomes.fasta -o plas_outgrps_genomes_Hard_MASKED.fasta
+
+
+to get the plas mapped read with length added:
+
+# SOME FILTERing of the results
+grep -H "Plas_" ../*/Host_Free_Reads/*.bed | awk 'NR == 1 { $7 = "length." } NR >= 3 { $7 = $3 - $2 } 1' >
+
+# to remove reads under a certain length
+
+grep -H "Plas_" ../*/Host_Free_Reads/*.bed | awk 'NR == 1 { $7 = "length." } NR >= 3 { $7 = $3 - $2 } 1' | awk '$7 >= 500' 
+
+
+grep -H "Plas_" *MASKED.bed | awk 'NR == 1 { $7 = "length." } NR >= 3 { $7 = $3 - $2 } 1' | awk '$7 >= 700' | awk '$5 >=30' > mapping_hits_Q30_minlen_700.txt
+
+# to replace the white space for tabs. 
+
+#sed 's/[:blank:]+/,/g' mapping_hits_Q30_minlen_700.txt > mapping_hits_Q30_minlen_700_tabs.txt
+tr ' ' \\t < mapping_hits_Q30_minlen_700.txt > mapping_hits_Q30_minlen_700_tabs.txt
+

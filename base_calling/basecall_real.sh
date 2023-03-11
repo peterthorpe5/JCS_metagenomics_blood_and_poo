@@ -34,8 +34,8 @@ Is what worked for me in the end. For some reason --device auto wasn't working, 
 fast5Folder=/home/pthorpe/projects/Janet_Cox_Singh/Sulawesi_Macaque/
 #other run parameters required
 # Flow Cell Type: FLO-FLG001 and Kit: SQK-RBK004
-flowcellVersion=FLO-MIN106
-sequencingKit=SQK-RBK004
+flowcellVersion=FLO-MIN114
+sequencingKit=SQK-LSK 114
 #this is where we write the fastq files
 outputFolder=/home/pthorpe/scratch/jcs_blood_samples/
 #path to guppy GPU version
