@@ -1,0 +1,126 @@
+import glob
+import os
+
+# Define fastq_files dynamically
+fastq_files = [file[:-len(".fastq.gz")] for file in glob.glob("*.fastq.gz")]
+
+# ... Rest of the code ...
+
+rule install_minimap_env:
+    input:
+        "envs/minimap.yaml"
+    output:
+        touch(".install_minimap_env_done")
+    shell:
+        """
+        {SBATCH}
+        conda env create --file {input}
+        """
+
+rule download_genomes:
+    output:
+        genome1="M.nemestrina_tonkeana_genome.fasta",
+        genome2="GWHBHDT00000000.genome.fasta",
+        genome3="GWHBHDB00000000.genome.fasta"
+    shell:
+        """
+        wget -O {output.genome1}.gz "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/956/065/GCF_000956065.1_Mnem_1.0/GCF_000956065.1_Mnem_1.0_genomic.fna.gz"
+        wget -O {output.genome2}.gz "https://download.cncb.ac.cn/gwh/Animals/Macaca_tonkeana_Mton1.0_GWHBHDT00000000/GWHBHDT00000000.genome.fasta.gz"
+        wget -O {output.genome3}.gz "https://download.cncb.ac.cn/gwh/Animals/Macaca_nigra_Mnig1.0_GWHBHDB00000000/GWHBHDB00000000.genome.fasta.gz"
+        gunzip {output.genome1}.gz
+        gunzip {output.genome2}.gz
+        gunzip {output.genome3}.gz
+        """
+
+rule concatenate_genomes:
+    input:
+        genome1="M.nemestrina_tonkeana_genome.fasta",
+        genome2="GWHBHDT00000000.genome.fasta",
+        genome3="GWHBHDB00000000.genome.fasta"
+    output:
+        "M.nemestrina_tonkeana_nigra_concat.fasta"
+    shell:
+        """
+        cat {input.genome1} {input.genome2} {input.genome3} > {output}
+        """
+
+# ... Rest of the rules ...
+
+rule map_reads:
+    input:
+        fq="{fq}.fastq.gz",
+        ref="M.nemestrina_tonkeana_nigra.fasta"
+    output:
+        sam="{fq}.sam"
+    shell:
+        """
+        if [[ ! -f "{output.sam}" ]]; then
+            minimap2 -I8G --split-prefix=tmp -t 16 -ax map-ont {input.ref} {input.fq} > {output.sam}
+        else
+            echo "Skipping minimap2 step for {output.sam} as it already exists"
+        fi
+        """
+
+rule convert_sam_to_bam:
+    input:
+        sam="{fq}.sam"
+    output:
+        bam="{fq}.bam"
+    shell:
+        """
+        if [[ ! -f "{output.bam}" ]]; then
+            samtools view -@ 16 -h -Sh -f 4 -F 256 -o {output.bam} {input.sam}
+        else
+            echo "Skipping samtools view step for {output.bam} as it already exists"
+        fi
+        """
+
+rule sort_bam:
+    input:
+        bam="{fq}.bam"
+    output:
+        sorted_bam="{fq}_sorted_no_host.bam"
+    shell:
+        """
+        if [[ ! -f "{output.sorted_bam}" ]]; then
+            samtools sort -@ 16 --write-index -o {output.sorted_bam} -O bam {input.bam}
+        else
+            echo "Skipping samtools sort step for {output.sorted_bam} as it already exists"
+        fi
+        """
+
+rule bam_to_fastq:
+    input:
+        sorted_bam="{fq}_sorted_no_host.bam"
+    output:
+        fastq="{fq}.host_removed_bait_nem_ton_nig.fq"
+    shell:
+        """
+        if [[ ! -f "{output.fastq}" ]]; then
+            bedtools bamtofastq -i {input.sorted_bam} -fq {output.fastq}
+        else
+            echo "Skipping bedtools bamtofastq step for {output.fastq} as it already exists"
+        fi
+        """
+
+# ... Rest of the rules ...
+
+def cleanup_files(wildcards):
+    fq = wildcards.fq
+    os.remove(f"{fq}.sam")
+    os.remove(f"{fq}.bam")
+
+rule cleanup:
+    input:
+        "{fq}.host_removed_bait_nem_ton_nig.fq"
+    output:
+        touch(".cleanup_done")
+    run:
+        cleanup_files(wildcards)
+
+rule all:
+    input:
+        expand("{fq}.host_removed_bait_nem_ton_nig.fq", fq=fastq_files),
+        ".install_minimap_env_done",
+        "M.nemestrina_tonkeana_nigra_concat.fasta",
+        ".cleanup_done"

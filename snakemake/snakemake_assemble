@@ -1,0 +1,57 @@
+import glob
+
+fastq_files = glob.glob("*.fastq.gz")
+
+rule all:
+    input:
+        expand("{fq}_flye/assembly.fasta", fq=fastq_files)
+
+rule install_conda_env:
+    output:
+        "env/flye.yaml"
+    shell:
+        "conda env create -f {output}"
+
+rule activate_conda_env:
+    shell:
+        "conda activate flye"
+
+rule remove_duplicates:
+    input:
+        "{fq}.host_removed_bait_nem_ton_nig.fq"
+    output:
+        "{fq}.dedup.fq"
+    shell:
+        "python remove_dup_fq.py -i {input} -o {output}"
+
+rule flye_assembly:
+    input:
+        "{fq}.dedup.fq"
+    output:
+        "{fq}_flye/assembly.fasta"
+    params:
+        resume="--resume" if os.path.isdir(fq + '_flye') else ""
+    threads: 16
+    resources:
+        mem=550
+        cpus=16
+        partition="himem"
+    shell:
+        """
+        flye --nano-hq {input} --scaffold --meta -o {fq}_flye {params.resume} -t {threads}
+        """
+
+# Install Conda environment
+env_yaml = "envs/flye.yaml"
+rule install_conda_env:
+    output:
+        env_yaml
+    shell:
+        "conda env create --name flye --file {output}"
+
+# Activate Conda environment
+rule activate_conda_env:
+    shell:
+        "conda activate flye"
+
+fastq_files = glob.glob("*.fastq.gz")

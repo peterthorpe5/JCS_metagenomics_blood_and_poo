@@ -1,0 +1,58 @@
+import glob
+
+fastq_files = glob.glob("*.fastq.gz")
+
+rule all:
+    input:
+        expand("{fq}_flye/assembly.fasta", fq=fastq_files),
+        "mapping_hits_poo_samples_Q30_minlen_700_tabs.txt"
+
+rule install_conda_env:
+    output:
+        "envs/minimap.yaml"
+    shell:
+        "conda env create -f {output}"
+
+rule activate_conda_env:
+    shell:
+        "conda activate minimap"
+
+rule remove_duplicates:
+    input:
+        "{fq}.host_removed_bait_nem_ton_nig.fq"
+    output:
+        "{fq}.dedup.fq"
+    shell:
+        "python remove_dup_fq.py -i {input} -o {output}"
+
+rule minimap_mapping:
+    input:
+        "{fq}.dedup.fq"
+    output:
+        "{fq}_sorted_nodup_poo_samples.MASKED.bed"
+    shell:
+        """
+        if [ ! -f "{output}" ]; then
+            minimap2 -t 16 -ax map-ont \
+                /home/pthorpe/scratch/jcs_blood_samples/genome_to_use/plas_outgrps_genomes_Hard_MASKED.fasta \
+                {input} \
+                | samtools view -@ 16 -e 'length(seq)>500' -Sh -q 15 - \
+                | samtools sort -@ 16 -O bam - \
+                | samtools rmdup -s - - \
+                | tee {output}_sorted_nodup.bam \
+                | bamToBed > {output}
+        fi
+        """
+
+rule process_mapping_hits:
+    input:
+        "{fq}_sorted_nodup_poo_samples.MASKED.bed"
+    output:
+        "mapping_hits_poo_samples_Q30_minlen_700_tabs.txt"
+    shell:
+        """
+        grep -H "Plas_" {input} | awk 'NR == 1 { $7 = "length." } NR >= 3 { $7 = $3 - $2 } 1' | awk '$7 >= 700' | awk '$5 >=30' > {output}
+        tr ' ' \\t < {output} > {output}
+        """
+
+fastq_files = glob.glob("*.fastq.gz")
