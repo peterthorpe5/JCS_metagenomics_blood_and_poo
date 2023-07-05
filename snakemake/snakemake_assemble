@@ -1,10 +1,11 @@
+import os
 import glob
 
-fastq_files = glob.glob("*.fastq.gz")
+fastq_files = glob.glob("filtered/*.fq.gz")  # Get gzip compressed fastq files from the "filtered" folder
 
 rule all:
     input:
-        expand("{fq}_flye/assembly.fasta", fq=fastq_files)
+        expand("assemblies/{fq}_flye/assembly.fasta", fq=fastq_files)
 
 rule install_conda_env:
     output:
@@ -18,19 +19,40 @@ rule activate_conda_env:
 
 rule remove_duplicates:
     input:
-        "{fq}.host_removed_bait_nem_ton_nig.fq"
+        "{fq}.host_removed_bait_nem_ton_nig.fq.gz"  # Input as gzip compressed fastq file
     output:
-        "{fq}.dedup.fq"
+        "{fq}.dedup.fq.gz"  # Output as gzip compressed fastq file
     shell:
-        "python remove_dup_fq.py -i {input} -o {output}"
+        r"""
+        gunzip -c {input} | python - <(echo '
+import sys
+import gzip
+
+def filter_my_fastq_file(in_fastq, out_fastq):
+    ' parse fq file. If name not in set, write out fq entry'
+    with sys.stdout as out_file:
+        dup_count = 0
+        name_set = set([])
+        count = 0
+        for i, (title, seq, qual) in enumerate(gzip.open(in_fastq, "rt")):
+            count += 1
+            title = "read_num_%d" % count
+            out_file.write("@%s\n%s\n+\n%s\n" % (title, seq.upper(), qual))
+
+filter_my_fastq_file(sys.stdin, sys.stdout)
+') > {output}
+        gzip {output}
+        """
+    params:
+        output="{fq}.dedup.fq"
 
 rule flye_assembly:
     input:
-        "{fq}.dedup.fq"
+        "{fq}.dedup.fq.gz"  # Input as gzip compressed fastq file
     output:
-        "{fq}_flye/assembly.fasta"
+        "assemblies/{fq}_flye/assembly.fasta"  # Output under "assemblies" folder
     params:
-        resume="--resume" if os.path.isdir(fq + '_flye') else ""
+        resume="--resume" if os.path.isdir('assemblies/{fq}_flye') else ""  # Check existence under "assemblies"
     threads: 16
     resources:
         mem=550
@@ -38,7 +60,7 @@ rule flye_assembly:
         partition="himem"
     shell:
         """
-        flye --nano-hq {input} --scaffold --meta -o {fq}_flye {params.resume} -t {threads}
+        flye --nano-hq {input} --scaffold --meta -o assemblies/{fq}_flye {params.resume} -t {threads}  # Output under "assemblies"
         """
 
 # Install Conda environment
@@ -54,4 +76,4 @@ rule activate_conda_env:
     shell:
         "conda activate flye"
 
-fastq_files = glob.glob("*.fastq.gz")
+fastq_files = glob.glob("filtered/*.fq.gz")  # Get gzip compressed fastq files from the "filtered" folder

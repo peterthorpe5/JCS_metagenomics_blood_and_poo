@@ -1,51 +1,51 @@
+Snakemake Workflow Guide
+Introduction
+This guide provides instructions for running a Snakemake workflow to process and analyze sequencing data. Snakemake is a workflow management system that helps automate the execution of complex pipelines. Follow the steps below to set up and run the Snakemake workflow.
 
+Prerequisites
+Before running the Snakemake workflow, ensure that you have the following:
 
-
-# to run the snakemake
-
+Conda: A package and environment manager. If not already installed, you can install it using the following command:
+r
+Copy code
 conda install -c conda-forge -c bioconda snakemake
+Step 1: Set up the Snakemake Workflow
+Download the Snakemake workflow files and organize them in a directory.
 
-
-snakemake --jobs <number_of_jobs> --cluster-config cluster.json --cluster "sbatch --cpus-per-task={cluster.cpus} --mem={cluster.mem} --partition={cluster.partition}" -p
-
-
-Make sure to adjust <number_of_jobs> to the desired number of parallel jobs and provide a cluster.json file with the appropriate cluster configuration, such as the number of CPUs, memory, and partition.
-
-Note that the Snakemake version includes three rules: all, remove_duplicates, and flye_assembly. The all rule specifies the final output files, the remove_duplicates rule removes duplicates, and the flye_assembly rule performs the flye assembly. The params.resume parameter is used to determine whether the --resume flag should be included based on the existence of the output folder.
-
-
-
-
+Open a terminal and navigate to the directory containing the workflow files.
 
 Activate the desired Conda environment:
 
-
+php
+Copy code
 conda activate <environment_name>
-Run Snakemake in verbose mode:
+Replace <environment_name> with the name of the Conda environment you want to use for running Snakemake.
 
-
+Step 2: Run the Snakemake Workflow
+Run Snakemake using the following command:
+css
+Copy code
 snakemake --snakefile Snakefile --verbose
-Replace <environment_name> in step 2 with the name of the Conda environment you want to use for running Snakemake. The --verbose flag in step 3 enables verbose output, providing more detailed information about the execution of rules and commands.
+The --snakefile Snakefile flag specifies the name of the Snakefile containing the workflow rules. The --verbose flag enables detailed output during the execution of rules and commands.
 
-Make sure you are in the directory where the Snakefile is located before running the Snakemake command.
+Monitor the progress of the Snakemake workflow as it executes each rule.
+Note: If you have renamed the Snakemake file to snake_make_map, replace --snakefile Snakefile in the command above with --snakefile snake_make_map.
 
-Note: If you have renamed the Snakemake file to snake_make_map, replace --snakefile Snakefile in step 3 with --snakefile snake_make_map.
+Running Snakemake on a Computing Cluster (Slurm)
+To run the Snakemake workflow on a computing cluster running Slurm, follow the steps below:
 
+Step 1: Create a Slurm Submission Script
+Create a shell script, e.g., submit_snakemake.sh, and open it for editing.
 
+Add the following content to the script:
 
-To run Snakemake on a computing cluster running Slurm, it's recommended to submit the Snakemake job as a Slurm job rather than running it directly in a shell script. This allows the cluster's job scheduler to manage resource allocation and job scheduling.
-
-Here's an example of how you can submit a Snakemake job to Slurm:
-
-Create a shell script, e.g., submit_snakemake.sh, with the following content:
-
-
+bash
+Copy code
 #!/bin/bash
 #SBATCH -J snakemake_job  # Job name
-#SBATCH --partition=himem  # Partition/queue name
+#SBATCH --partition=your_partition  # Partition/queue name
 #SBATCH --cpus-per-task=16  # Number of CPUs per task
 #SBATCH --mem=50GB  # Memory per node
-
 
 # Activate the desired Conda environment
 conda activate <environment_name>
@@ -55,78 +55,24 @@ cd /path/to/your/snakefile/directory
 
 # Run Snakemake with the specified Snakefile and desired options
 snakemake --snakefile Snakefile --verbose --use-conda --cores $SLURM_CPUS_PER_TASK
-Replace <environment_name> with the name of the Conda environment you want to activate for running Snakemake.
+Replace <environment_name> with the name of the Conda environment you want to activate for running Snakemake. Adjust the Slurm parameters (#SBATCH lines) according to your cluster's configuration and resource requirements.
+
+Save and close the script.
 
 Make the script executable:
 
-
+bash
+Copy code
 chmod +x submit_snakemake.sh
-Submit the script as a Slurm job:
-
-
+Step 2: Submit the Snakemake Job to Slurm
+Submit the script as a Slurm job using the following command:
+bash
+Copy code
 sbatch submit_snakemake.sh
-This will submit the Snakemake job to the Slurm job scheduler, and the scheduler will allocate the requested resources and execute the job.
+This will submit the Snakemake job to the Slurm job scheduler, which will allocate the requested resources and execute the job.
 
-Make sure to adjust the Slurm parameters (#SBATCH lines) in the script according to your cluster's configuration and resource requirements.
-
+Monitor the job's progress using the Slurm job management commands provided by your cluster.
 By submitting the Snakemake job as a Slurm job, you can take advantage of the cluster's scheduling capabilities and resource management.
 
-
-
-
-To run this Snakemake workflow on a computing cluster running Slurm, you can submit it as a job using the sbatch command. Save the Snakemake code in a file named Snakefile. Then, create a shell script (e.g., run_snakemake.sh) with the following content:
-
-bash
-Copy code
-#!/bin/bash
-#SBATCH -J snakemake_job
-#SBATCH --partition=your_partition
-#SBATCH --cpus-per-task=16
-#SBATCH --mem=8G
-
-module load Anaconda3
-source activate snakemake_env
-
-snakemake --snakefile Snakefile --verbose --cores 16
-
-Make sure to replace your_partition with the appropriate partition on your computing cluster. You may also need to adjust the --cpus-per-task, --mem, and --cores options based on your specific requirements.
-
-To run the workflow, submit the job to Slurm using the following command:
-
-bash
-Copy code
-sbatch run_snakemake.sh
-This will execute the Snakemake workflow using the specified Slurm job settings and activate the minimap conda environment.
-
-Note: Before running the workflow, make sure you have set up the snakemake_env conda environment with Snakemake installed. You can create the environment and install Snakemake by running the following commands:
-
-bash
-Copy code
-conda create -n snakemake
-
-
-
-
-
-Save the script as Snakefile.
-
-Create a file named config.yaml with the following contents:
-
-yaml
-Copy code
-resources:
-  mem: 78GB
-Open a terminal and navigate to the directory where you saved Snakefile.
-
-Activate your conda environment.
-
-Run the following command to execute the Snakemake workflow:
-
-shell
-Copy code
-snakemake --snakefile Snakefile --cores 1 --use-conda --profile slurm
-Make sure to adjust the --cores value according to the number of available cores on your machine. The --profile slurm option tells Snakemake to use the SLURM profile defined in the ~/.config/snakemake/slurm directory.
-
-Snakemake will automatically download the genome files, concatenate them, and then perform the necessary steps for each fastq file. Once the workflow is complete, the output files will be generated.
-
-Please note that you may need to adjust the paths and file names in the script and SLURM flags to match your specific setup.
+Conclusion
+You have successfully set up and executed the Snakemake workflow for processing and analyzing sequencing data. By following the steps outlined in this guide, you can streamline your data analysis pipelines and automate repetitive tasks. Snakemake's flexibility and integration with Conda environments and cluster systems make it a powerful tool for reproducible and scalable bioinformatics workflows.

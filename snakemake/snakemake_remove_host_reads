@@ -1,10 +1,21 @@
 import glob
 import os
+import shutil
 
-# Define fastq_files dynamically
+output_dir = "filtered"
+
 fastq_files = [file[:-len(".fastq.gz")] for file in glob.glob("*.fastq.gz")]
+fastq_files += [file[:-len(".fastq.gz")] for file in glob.glob("raw/*.fastq.gz")]
+fastq_files += [file[:-len(".fastq.gz")] for file in glob.glob("reads/*.fastq.gz")]
+fastq_files += [file[:-len(".fastq.gz")] for file in glob.glob("raw_reads/*.fastq.gz")]
 
-# ... Rest of the code ...
+
+rule all:
+    input:
+        expand(os.path.join(output_dir, "{fq}.host_removed_bait_nem_ton_nig.fq.gz"), fq=fastq_files),
+        ".install_minimap_env_done",
+        "M.nemestrina_tonkeana_nigra_concat.fasta",
+        ".cleanup_done"
 
 rule install_minimap_env:
     input:
@@ -19,9 +30,9 @@ rule install_minimap_env:
 
 rule download_genomes:
     output:
-        genome1="M.nemestrina_tonkeana_genome.fasta",
-        genome2="GWHBHDT00000000.genome.fasta",
-        genome3="GWHBHDB00000000.genome.fasta"
+        genome1=os.path.join(output_dir, "M.nemestrina_tonkeana_genome.fasta"),
+        genome2=os.path.join(output_dir, "GWHBHDT00000000.genome.fasta"),
+        genome3=os.path.join(output_dir, "GWHBHDB00000000.genome.fasta")
     shell:
         """
         wget -O {output.genome1}.gz "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/956/065/GCF_000956065.1_Mnem_1.0/GCF_000956065.1_Mnem_1.0_genomic.fna.gz"
@@ -34,24 +45,22 @@ rule download_genomes:
 
 rule concatenate_genomes:
     input:
-        genome1="M.nemestrina_tonkeana_genome.fasta",
-        genome2="GWHBHDT00000000.genome.fasta",
-        genome3="GWHBHDB00000000.genome.fasta"
+        genome1=os.path.join(output_dir, "M.nemestrina_tonkeana_genome.fasta"),
+        genome2=os.path.join(output_dir, "GWHBHDT00000000.genome.fasta"),
+        genome3=os.path.join(output_dir, "GWHBHDB00000000.genome.fasta")
     output:
-        "M.nemestrina_tonkeana_nigra_concat.fasta"
+        os.path.join(output_dir, "M.nemestrina_tonkeana_nigra_concat.fasta")
     shell:
         """
         cat {input.genome1} {input.genome2} {input.genome3} > {output}
         """
 
-# ... Rest of the rules ...
-
 rule map_reads:
     input:
-        fq="{fq}.fastq.gz",
-        ref="M.nemestrina_tonkeana_nigra.fasta"
+        fq=os.path.join(output_dir, "{fq}.fastq.gz"),
+        ref=os.path.join(output_dir, "M.nemestrina_tonkeana_nigra.fasta")
     output:
-        sam="{fq}.sam"
+        sam=os.path.join(output_dir, "{fq}.sam")
     shell:
         """
         if [[ ! -f "{output.sam}" ]]; then
@@ -63,9 +72,9 @@ rule map_reads:
 
 rule convert_sam_to_bam:
     input:
-        sam="{fq}.sam"
+        sam=os.path.join(output_dir, "{fq}.sam")
     output:
-        bam="{fq}.bam"
+        bam=os.path.join(output_dir, "{fq}.bam")
     shell:
         """
         if [[ ! -f "{output.bam}" ]]; then
@@ -77,9 +86,9 @@ rule convert_sam_to_bam:
 
 rule sort_bam:
     input:
-        bam="{fq}.bam"
+        bam=os.path.join(output_dir, "{fq}.bam")
     output:
-        sorted_bam="{fq}_sorted_no_host.bam"
+        sorted_bam=os.path.join(output_dir, "{fq}_sorted_no_host.bam")
     shell:
         """
         if [[ ! -f "{output.sorted_bam}" ]]; then
@@ -91,36 +100,27 @@ rule sort_bam:
 
 rule bam_to_fastq:
     input:
-        sorted_bam="{fq}_sorted_no_host.bam"
+        sorted_bam=os.path.join(output_dir, "{fq}_sorted_no_host.bam")
     output:
-        fastq="{fq}.host_removed_bait_nem_ton_nig.fq"
+        fastq=os.path.join(output_dir, "{fq}.host_removed_bait_nem_ton_nig.fq.gz")
     shell:
         """
         if [[ ! -f "{output.fastq}" ]]; then
-            bedtools bamtofastq -i {input.sorted_bam} -fq {output.fastq}
+            bedtools bamtofastq -i {input.sorted_bam} | gzip > {output.fastq}
         else
             echo "Skipping bedtools bamtofastq step for {output.fastq} as it already exists"
         fi
         """
 
-# ... Rest of the rules ...
-
 def cleanup_files(wildcards):
     fq = wildcards.fq
-    os.remove(f"{fq}.sam")
-    os.remove(f"{fq}.bam")
+    os.remove(os.path.join(output_dir, f"{fq}.sam"))
+    os.remove(os.path.join(output_dir, f"{fq}.bam"))
 
 rule cleanup:
     input:
-        "{fq}.host_removed_bait_nem_ton_nig.fq"
+        os.path.join(output_dir, "{fq}.host_removed_bait_nem_ton_nig.fq.gz")
     output:
         touch(".cleanup_done")
     run:
         cleanup_files(wildcards)
-
-rule all:
-    input:
-        expand("{fq}.host_removed_bait_nem_ton_nig.fq", fq=fastq_files),
-        ".install_minimap_env_done",
-        "M.nemestrina_tonkeana_nigra_concat.fasta",
-        ".cleanup_done"
