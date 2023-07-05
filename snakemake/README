@@ -1,31 +1,31 @@
-Snakemake Workflow Guide
+# Snakemake Workflow Guide
 Introduction
 This guide provides instructions for running a Snakemake workflow to process and analyze sequencing data. Snakemake is a workflow management system that helps automate the execution of complex pipelines. Follow the steps below to set up and run the Snakemake workflow.
 
-Prerequisites
+## Prerequisites
 Before running the Snakemake workflow, ensure that you have the following:
 
 Conda: A package and environment manager. If not already installed, you can install it using the following command:
-r
-Copy code
-conda install -c conda-forge -c bioconda snakemake
-Step 1: Set up the Snakemake Workflow
+
+
+`conda install -c conda-forge -c bioconda snakemake`
+
+## Step 1: Set up the Snakemake Workflow
 Download the Snakemake workflow files and organize them in a directory.
 
 Open a terminal and navigate to the directory containing the workflow files.
 
 Activate the desired Conda environment:
 
-php
-Copy code
-conda activate <environment_name>
+
+`conda activate <environment_name>`
 Replace <environment_name> with the name of the Conda environment you want to use for running Snakemake.
 
-Step 2: Run the Snakemake Workflow
+## Step 2: Run the Snakemake Workflow
 Run Snakemake using the following command:
-css
-Copy code
-snakemake --snakefile Snakefile --verbose
+
+
+`snakemake --snakefile Snakefile --verbose`
 The --snakefile Snakefile flag specifies the name of the Snakefile containing the workflow rules. The --verbose flag enables detailed output during the execution of rules and commands.
 
 Monitor the progress of the Snakemake workflow as it executes each rule.
@@ -39,8 +39,7 @@ Create a shell script, e.g., submit_snakemake.sh, and open it for editing.
 
 Add the following content to the script:
 
-bash
-Copy code
+
 #!/bin/bash
 #SBATCH -J snakemake_job  # Job name
 #SBATCH --partition=your_partition  # Partition/queue name
@@ -61,18 +60,17 @@ Save and close the script.
 
 Make the script executable:
 
-bash
-Copy code
-chmod +x submit_snakemake.sh
-Step 2: Submit the Snakemake Job to Slurm
+
+`chmod +x submit_snakemake.sh`
+
+# Step 2: Submit the Snakemake Job to Slurm
 Submit the script as a Slurm job using the following command:
-bash
-Copy code
-sbatch submit_snakemake.sh
+
+`sbatch submit_snakemake.sh`
 This will submit the Snakemake job to the Slurm job scheduler, which will allocate the requested resources and execute the job.
 
 Monitor the job's progress using the Slurm job management commands provided by your cluster.
 By submitting the Snakemake job as a Slurm job, you can take advantage of the cluster's scheduling capabilities and resource management.
 
-Conclusion
+# ßConclusion
 You have successfully set up and executed the Snakemake workflow for processing and analyzing sequencing data. By following the steps outlined in this guide, you can streamline your data analysis pipelines and automate repetitive tasks. Snakemake's flexibility and integration with Conda environments and cluster systems make it a powerful tool for reproducible and scalable bioinformatics workflows.
