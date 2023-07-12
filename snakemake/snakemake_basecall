@@ -1,0 +1,74 @@
+import os
+
+# User-defined paths
+fast5Folder = "<path_to_raw_data>"
+outputFolder = "<path_to_output_folder>"
+guppyBin = "<path_to_guppy_bin>"
+
+# Other run parameters required
+flowcellVersion = "FLO-MIN114"
+sequencingKit = "SQK-LSK 114"
+
+folders = os.listdir(fast5Folder)
+
+rule all:
+    input:
+        expand("{outputFolder}/{folder}/final_summary.txt", outputFolder=outputFolder, folder=folders)
+
+rule basecalling:
+    input:
+        fast5Folder="{fast5Folder}/{folder}/*/fast5"
+    output:
+        "{outputFolder}/{folder}/final_summary.txt"
+    params:
+        guppyBin=guppyBin,
+        flowcellVersion=flowcellVersion,
+        sequencingKit=sequencingKit
+    shell:
+        """
+        sbatch \
+        --partition=gpu \
+        --gpus=2 \
+        -w n19-64-3072-thanos \
+        --export=ALL \
+        <<EOF
+        {params.guppyBin}/guppy_basecaller \
+        -i {input.fast5Folder} \
+        -s {outputFolder}/{wildcards.folder} \
+        --device auto \
+        --flowcell {params.flowcellVersion} \
+        --kit {params.sequencingKit} \
+        --records_per_fastq 0 \
+        --num_callers 8
+        EOF
+        """
+
+
+
+
+"""
+
+Prepare the environment:
+
+Make sure you have Snakemake installed. You can install it using pip install snakemake.
+Set up the necessary dependencies, including the installation of guppy_basecaller and CUDA, if required for your GPU-based basecalling.
+Fill in the paths in the Snakefile:
+
+Open the Snakefile in a text editor.
+Replace <path_to_raw_data> with the path to the folder containing your raw ONT data. This folder should contain multiple fast5 files.
+Replace <path_to_output_folder> with the desired path where you want to store the generated fastq files.
+Replace <path_to_guppy_bin> with the path to the guppy_basecaller binary.
+Save the modified Snakefile.
+
+Run the Snakemake script:
+
+Open a terminal or command prompt.
+Navigate to the directory where your Snakefile and data are located.
+Run the command snakemake to execute the Snakemake workflow.
+Snakemake will automatically detect the available folders in the <path_to_raw_data> directory and perform the GPU basecalling for each folder using the specified guppy_basecaller command.
+The generated fastq files will be stored in separate subdirectories within the <path_to_output_folder>.
+Monitor the progress and view the results:
+
+Snakemake will display the progress of the basecalling process in the terminal, indicating which tasks are being executed.
+Once the basecalling is complete, you can check the <path_to_output_folder> to find the generated fastq files for each folder in the <path_to_raw_data>.
+Note: It is important to ensure that your system has the necessary dependencies and permissions to execute the GPU-based basecalling and write to the specified output folder.
